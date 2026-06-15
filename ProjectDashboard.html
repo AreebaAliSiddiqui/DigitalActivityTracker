@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Digital Activity Flow System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f4ff;--surface:#fff;--surface2:#f8faff;
+  --border:#e2e8f4;--text:#1e2a4a;--muted:#6b7fa8;
+  --accent:#3b6ef0;--accent-l:#ebf0ff;
+  --green:#10b981;--green-l:#d1fae5;
+  --orange:#f59e0b;--orange-l:#fef3c7;
+  --pink:#ec4899;--pink-l:#fce7f3;
+  --purple:#8b5cf6;--purple-l:#ede9fe;
+  --red:#ef4444;--red-l:#fee2e2;
+  --cyan:#06b6d4;--cyan-l:#cffafe;
+  --r:12px;--rs:8px;
+  --sh:0 1px 4px rgba(59,110,240,.08),0 4px 16px rgba(59,110,240,.06);
+  --sh2:0 4px 24px rgba(59,110,240,.14);
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;box-shadow:0 1px 8px rgba(59,110,240,.08);height:54px}
+.logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--accent)}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.hright{display:flex;align-items:center;gap:8px}
+.status-pill{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;
+  background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--muted)}
+.sdot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;flex-shrink:0}
+.sdot.ok{background:var(--green);box-shadow:0 0 0 3px var(--green-l)}
+.sdot.err{background:var(--red);box-shadow:0 0 0 3px var(--red-l)}
+
+/* NAV */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:11px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:var(--accent)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* PAGES */
+.page{display:none;padding:20px 24px;max-width:1440px;margin:auto}
+.page.active{display:block}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:var(--rs);font-size:13px;font-weight:600;
+  cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2952cc;transform:translateY(-1px)}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#059669}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-csv{background:var(--green-l);color:#065f46;border:1px solid #6ee7b7}.btn-csv:hover{background:#a7f3d0}
+.btn-sm{padding:5px 9px;font-size:12px;border-radius:6px}
+.btn-edit{background:var(--accent-l);color:var(--accent);border:1px solid #c7d7ff}.btn-edit:hover{background:#dce8ff}
+.btn-del{background:var(--red-l);color:var(--red);border:1px solid #fca5a5}.btn-del:hover{background:#fecaca}
+
+/* GRID */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:700;color:var(--text)}
+.card-badge{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--accent-l);color:var(--accent);font-weight:600}
+
+/* KPI */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh);transition:transform .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.kpi-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px}
+.kpi-val{font-size:22px;font-weight:700;color:var(--text)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:var(--rs);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--surface2)}
+th{padding:9px 12px;color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10px;
+  letter-spacing:.5px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbff}
+canvas{max-height:240px}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600}
+.b-blue{background:var(--accent-l);color:var(--accent)}
+.b-green{background:var(--green-l);color:#065f46}
+.b-purple{background:var(--purple-l);color:#5b21b6}
+.b-orange{background:var(--orange-l);color:#92400e}
+.b-red{background:var(--red-l);color:#991b1b}
+.b-gray{background:#f1f5f9;color:#475569}
+
+/* AVATAR */
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;color:#fff}
+
+/* FILTER ROW */
+.filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.form-input{padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--rs);
+  font-size:12px;color:var(--text);background:var(--surface);outline:none;transition:border .15s}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,110,240,.1)}
+select.form-input{cursor:pointer}
+
+/* GOAL BAR */
+.goal-bar-wrap{margin:4px 0 2px}
+.goal-bar-bg{background:#e9eef9;border-radius:999px;height:8px;width:100%;overflow:hidden}
+.goal-bar-fill{height:8px;border-radius:999px;transition:width .6s ease}
+.goal-ok{background:var(--green)}
+.goal-warn{background:var(--orange)}
+.goal-over{background:var(--red)}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(30,42,74,.35);
+  z-index:500;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;padding:24px;width:100%;max-width:540px;
+  max-height:90vh;overflow-y:auto;
+  box-shadow:0 8px 40px rgba(30,42,74,.18);border:1px solid var(--border);animation:sIn .2s ease}
+@keyframes sIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:18px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);padding-bottom:8px;border-bottom:1px solid var(--border)}
+.mclose{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1}
+.mclose:hover{color:var(--text)}
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;
+  padding-top:14px;border-top:1px solid var(--border)}
+.auto-id{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:var(--green-l);border:1px solid #6ee7b7;border-radius:var(--rs);
+  font-size:12px;color:#065f46;font-weight:600;margin-bottom:14px}
+
+/* CONFIRM */
+.conf-bg{display:none;position:fixed;inset:0;background:rgba(30,42,74,.3);
+  z-index:600;align-items:center;justify-content:center}
+.conf-bg.open{display:flex}
+.conf-card{background:var(--surface);border-radius:var(--r);padding:22px;max-width:340px;width:90%;
+  box-shadow:var(--sh2);border:1px solid var(--border)}
+.conf-card h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.conf-card p{font-size:12px;color:var(--muted);margin-bottom:16px}
+.conf-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;padding:10px 14px;border-radius:var(--rs);
+  font-size:12px;font-weight:500;box-shadow:var(--sh2);opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;transform:translateY(8px);z-index:999;
+  display:flex;align-items:center;gap:7px}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:var(--green-l);color:#065f46;border:1px solid #6ee7b7}
+#toast.err{background:var(--red-l);color:#991b1b;border:1px solid #fca5a5}
+#toast.info{background:var(--accent-l);color:#1e3a8a;border:1px solid #93c5fd}
+
+.skeleton{background:linear-gradient(90deg,#e9eef9 25%,#f3f6fc 50%,#e9eef9 75%);
+  background-size:200%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
+
+/* PERIOD TOGGLE */
+.period-toggle{display:flex;gap:4px}
+.ptab{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)}
+.ptab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+@media(max-width:1024px){.kpi-row{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g3 .card:first-child{grid-column:1/-1}.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.kpi-row,.g2,.g3,.g4{grid-template-columns:1fr}.page{padding:14px}.form-row,.form-row3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo"><div class="logo-icon">📊</div>Digital Activity Flow System</div>
+  <div class="hright">
+    <span id="lastUpdated" style="font-size:11px;color:var(--muted)"></span>
+    <div class="status-pill"><div class="sdot" id="sdot"></div><span id="stxt">Connecting…</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="switchTab('sessions');setTimeout(()=>openSessionModal('add'),100)">+ Session</button>
+    <button class="btn btn-primary btn-sm" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📈 Dashboard</div>
+  <div class="tab" data-tab="analytics" onclick="switchTab('analytics')">📊 Analytics</div>
+  <div class="tab" data-tab="users" onclick="switchTab('users')">👥 Users</div>
+  <div class="tab" data-tab="sessions" onclick="switchTab('sessions')">📋 Sessions</div>
+</nav>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="page active" id="pg-dashboard">
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-icon" style="background:var(--accent-l)">🎯</div><div><div class="kpi-label">Total Sessions</div><div class="kpi-val" id="kSess">—</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--purple-l)">⏱</div><div><div class="kpi-label">Total Minutes</div><div class="kpi-val" id="kMin">—</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-l)">👥</div><div><div class="kpi-label">Total Users</div><div class="kpi-val" id="kUsers">—</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--orange-l)">📱</div><div><div class="kpi-label">Apps Used</div><div class="kpi-val" id="kApps">—</div></div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">📈 Daily Activity Trend</div><span class="card-badge">Last 30 days</span></div>
+      <canvas id="lineChart" style="max-height:260px"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">🍩 Usage by Category</div><span class="card-badge">All time</span></div>
+      <canvas id="doughnutChart" style="max-height:260px"></canvas>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="card">
+      <div class="card-head"><div class="card-title">📊 Top 10 Apps by Usage</div><span class="card-badge">FR-08</span></div>
+      <canvas id="barChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">🎯 Usage by User</div><span class="card-badge">Polar</span></div>
+      <canvas id="polarChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">🫧 Category Spread</div><span class="card-badge">Bubble</span></div>
+      <canvas id="bubbleChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ANALYTICS ══ -->
+<div class="page" id="pg-analytics">
+
+  <!-- Goal Comparison -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head">
+      <div class="card-title">🎯 Today's Usage vs Daily Goal — FR-05</div>
+      <span class="card-badge">Live today</span>
+    </div>
+    <div id="goalList"></div>
+  </div>
+
+  <!-- Usage Summary -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head">
+      <div class="card-title">📅 Usage Summary per User — FR-04</div>
+      <div class="period-toggle">
+        <button class="ptab active" onclick="loadSummary('daily',this)">Daily</button>
+        <button class="ptab" onclick="loadSummary('weekly',this)">Weekly</button>
+        <button class="ptab" onclick="loadSummary('monthly',this)">Monthly</button>
+      </div>
+    </div>
+    <canvas id="summaryChart" style="max-height:260px"></canvas>
+  </div>
+
+  <!-- Multi-device chart -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">📱 Multi-Device Usage — FR-09</div><span class="card-badge">By device type</span></div>
+      <canvas id="deviceChart" style="max-height:240px"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">🏆 Top 10 Apps Report — FR-08</div><span class="card-badge">All time</span></div>
+      <div id="top10List" style="overflow-y:auto;max-height:240px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ USERS ══ -->
+<div class="page" id="pg-users">
+  <div class="card">
+          <div class="card-head">
+      <div class="card-title">👥 User Management</div>
+      <div class="filter-row">
+        <input class="form-input" id="userSearch" placeholder="Search users…" style="width:180px" oninput="filterUsers()">
+        <span class="card-badge" id="userCount">0 users</span>
+        <!-- Admin controls — hidden until logged in -->
+        <div id="adminControls" style="display:none;align-items:center;gap:8px">
+          <button class="btn btn-success btn-sm" onclick="showAddUserForm()">+ Add User</button>
+          <button class="btn btn-ghost btn-sm" onclick="adminLogout()" title="Logout admin">🔓 Logout</button>
+        </div>
+        <button id="adminLockBtn" class="btn btn-ghost btn-sm" onclick="openAdminModal()" title="Admin login required">
+          🔐 Admin Login
+        </button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Username</th><th>Email</th><th>Age</th><th>City</th><th>Daily Goal</th><th>Today</th><th>Sessions</th><th>Total Min</th><th style="text-align:center">Actions</th></tr></thead>
+        <tbody id="userBody"><tr><td colspan="11"><div class="skeleton" style="height:34px;margin:4px 0"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSIONS ══ -->
+<div class="page" id="pg-sessions">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">📋 Session Management</div>
+      <div class="filter-row">
+        <button class="btn btn-csv btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-success btn-sm" onclick="openSessionModal('add')">+ Add Session</button>
+      </div>
+    </div>
+
+    <!-- Advanced filter bar FR-06 -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:var(--rs);border:1px solid var(--border)">
+      <div>
+        <div class="form-label" style="margin-bottom:3px">User</div>
+        <select class="form-input" id="fltUser" style="width:140px" onchange="applyFilters()">
+          <option value="">All Users</option>
+        </select>
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:3px">App</div>
+        <input class="form-input" id="fltApp" placeholder="App name…" style="width:120px" oninput="applyFilters()">
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:3px">Category</div>
+        <input class="form-input" id="fltCat" placeholder="Category…" style="width:120px" oninput="applyFilters()">
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:3px">From Date</div>
+        <input class="form-input" id="fltFrom" type="date" style="width:130px" onchange="applyFilters()">
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:3px">To Date</div>
+        <input class="form-input" id="fltTo" type="date" style="width:130px" onchange="applyFilters()">
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="applyFilters()">🔍 Filter</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Clear</button>
+        <span class="card-badge" id="sessCount">0 rows</span>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>User</th><th>App</th><th>Category</th><th>Device</th><th>Duration</th><th>Date & Time</th><th style="text-align:center">Actions</th></tr></thead>
+        <tbody id="sessBody"><tr><td colspan="8"><div class="skeleton" style="height:34px;margin:4px 0"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-bg" id="userModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="userModalTitle">Add New User</span>
+      <button class="mclose" onclick="closeUserModal()">×</button>
+    </div>
+    <input type="hidden" id="editUserId">
+    <div class="auto-id" id="autoIdBox">🔑 <span id="autoIdText">User ID will be auto-assigned</span></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" id="uFullName" placeholder="e.g. Areeba Ali" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="uUsername" placeholder="e.g. areeba.ali" style="width:100%">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="uEmail" type="email" placeholder="e.g. areeba@email.com" style="width:100%">
+    </div>
+    <div class="form-row3">
+      <div class="form-group">
+        <label class="form-label">Age</label>
+        <input class="form-input" id="uAge" type="number" placeholder="e.g. 22" style="width:100%" min="5" max="120">
+      </div>
+      <div class="form-group">
+        <label class="form-label">City</label>
+        <input class="form-input" id="uCity" placeholder="e.g. Karachi" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Daily Goal (min)</label>
+        <input class="form-input" id="uDailyGoal" type="number" placeholder="120" style="width:100%" min="0">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
+      <button class="btn btn-primary" id="userSubmitBtn" onclick="submitUserForm()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION MODAL -->
+<div class="modal-bg" id="sessionModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="sessModalTitle">Add Session</span>
+      <button class="mclose" onclick="closeSessionModal()">×</button>
+    </div>
+    <input type="hidden" id="editSessId">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">User *</label>
+        <select class="form-input" id="fUserID" style="width:100%"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">App *</label>
+        <select class="form-input" id="fAppID" style="width:100%"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Device</label>
+        <select class="form-input" id="fDeviceID" style="width:100%"><option value="">— None —</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration (min) *</label>
+        <input class="form-input" id="fDuration" type="number" placeholder="e.g. 45" style="width:100%" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Start Time</label>
+      <input class="form-input" id="fStartTime" type="datetime-local" style="width:100%">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input class="form-input" id="fNotes" placeholder="Optional…" style="width:100%">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeSessionModal()">Cancel</button>
+      <button class="btn btn-primary" id="sessSubmitBtn" onclick="submitSessionForm()">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="conf-bg" id="confBox">
+  <div class="conf-card">
+    <h3 id="confTitle">Confirm Delete</h3>
+    <p id="confMsg">This cannot be undone.</p>
+    <div class="conf-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeConf()">Cancel</button>
+      <button class="btn btn-sm" style="background:var(--red);color:#fff;border:none" id="confOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-bg" id="adminModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">
+      <span>🔐 Admin Login</span>
+      <button class="mclose" onclick="closeAdminModal()">×</button>
+    </div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="width:52px;height:52px;background:var(--accent);border-radius:50%;
+        display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 8px">🛡</div>
+      <div style="font-size:12px;color:var(--muted)">Only admins can add, edit or delete users</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="adminUser" placeholder="admin" style="width:100%"
+             onkeydown="if(event.key==='Enter')submitAdminLogin()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="adminPass" type="password" placeholder="••••••••" style="width:100%"
+             onkeydown="if(event.key==='Enter')submitAdminLogin()">
+    </div>
+    <div id="adminErr" style="display:none;color:var(--red);font-size:12px;margin-bottom:8px;
+      padding:8px;background:var(--red-l);border-radius:6px;border:1px solid #fca5a5"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeAdminModal()">Cancel</button>
+      <button class="btn btn-primary" id="adminLoginBtn" onclick="submitAdminLogin()">🔐 Login</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px">
+      Default: <code>admin</code> / <code>admin123</code>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const BASE='';
+const C=['#3b6ef0','#8b5cf6','#10b981','#f59e0b','#ec4899','#06b6d4','#f97316','#ef4444','#14b8a6','#a855f7'];
+const CA=C.map(c=>c+'44');
+const AV=['#3b6ef0','#8b5cf6','#10b981','#f59e0b','#ec4899','#06b6d4','#f97316'];
+
+Chart.defaults.color='#6b7fa8';
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.borderColor='#e2e8f4';
+
+const charts={};
+let isAdmin = false; // default flag (admin login can set this)
+let allUsers=[], allSessions=[], dropUsers=[], dropApps=[], dropDevices=[];
+
+function api(p){return BASE+p}
+
+/* ── Toast ── */
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.innerHTML=`<span>${{ok:'✓',err:'✕',info:'ℹ'}[type]||'ℹ'}</span><span>${msg}</span>`;
+  el.className=`show ${type}`;clearTimeout(el._t);
+  el._t=setTimeout(()=>el.className='',3200);
+}
+
+/* ── Tab ── */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  if(name==='analytics') loadAnalyticsPage();
+}
+
+/* ── Health ── */
+async function checkHealth(){
+  try{
+    const r=await fetch(api('/api/health'));
+    const ok=r.ok;
+    document.getElementById('sdot').className='sdot '+(ok?'ok':'err');
+    document.getElementById('stxt').textContent=ok?'DB Connected':'DB Error';
+  }catch{
+    document.getElementById('sdot').className='sdot err';
+    document.getElementById('stxt').textContent='Offline';
+  }
+}
+
+/* ── Chart helpers ── */
+function kill(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
+function grid(){return{color:'#e8eef8',drawBorder:false}}
+
+/* ── KPIs ── */
+async function loadKPIs(){
+  try{
+    const d=await fetch(api('/api/analytics/kpis')).then(r=>r.json());
+    document.getElementById('kSess').textContent=d.totalSessions?.toLocaleString()??'—';
+    document.getElementById('kMin').textContent=d.totalMinutes?.toLocaleString()??'—';
+    document.getElementById('kUsers').textContent=d.activeUsers??'—';
+    document.getElementById('kApps').textContent=d.appsUsed??'—';
+  }catch(e){console.warn(e)}
+}
+
+/* ── Line chart ── */
+async function loadLine(){
+  try{
+    const d=await fetch(api('/api/analytics/daily-trend')).then(r=>r.json());
+    if(!d.length)return;kill('line');
+    charts.line=new Chart(document.getElementById('lineChart'),{
+      type:'line',
+      data:{labels:d.map(x=>x.day),datasets:[
+        {label:'Minutes',data:d.map(x=>x.minutes),borderColor:'#3b6ef0',backgroundColor:'rgba(59,110,240,.08)',tension:.45,fill:true,pointRadius:3,pointHoverRadius:6,yAxisID:'y'},
+        {label:'Sessions',data:d.map(x=>x.sessions),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',tension:.45,fill:true,pointRadius:3,pointHoverRadius:6,yAxisID:'y1'}
+      ]},
+      options:{responsive:true,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{labels:{color:'#6b7fa8'}}},
+        scales:{x:{grid:grid(),ticks:{maxTicksLimit:8}},
+          y:{grid:grid(),title:{display:true,text:'Minutes',color:'#3b6ef0'}},
+          y1:{position:'right',grid:{display:false},title:{display:true,text:'Sessions',color:'#10b981'}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* ── Doughnut ── */
+async function loadDoughnut(){
+  try{
+    const d=await fetch(api('/api/analytics/by-category')).then(r=>r.json());
+    if(!d.length)return;kill('doughnut');
+    charts.doughnut=new Chart(document.getElementById('doughnutChart'),{
+      type:'doughnut',
+      data:{labels:d.map(x=>x.category),datasets:[{data:d.map(x=>x.minutes),backgroundColor:CA,borderColor:C,borderWidth:2,hoverOffset:10}]},
+      options:{responsive:true,cutout:'68%',plugins:{
+        legend:{position:'bottom',labels:{color:'#6b7fa8',padding:12,boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed.toLocaleString()} min`}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* ── Bar ── */
+async function loadBar(){
+  try{
+    const d=await fetch(api('/api/analytics/by-app')).then(r=>r.json());
+    if(!d.length)return;kill('bar');
+    charts.bar=new Chart(document.getElementById('barChart'),{
+      type:'bar',
+      data:{labels:d.map(x=>x.app),datasets:[{label:'Minutes',data:d.map(x=>x.minutes),backgroundColor:CA,borderColor:C,borderWidth:1.5,borderRadius:5,borderSkipped:false}]},
+      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:grid()},y:{grid:{display:false}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* ── Polar ── */
+async function loadPolar(){
+  try{
+    const d=await fetch(api('/api/analytics/by-user')).then(r=>r.json());
+    if(!d.length)return;kill('polar');
+    charts.polar=new Chart(document.getElementById('polarChart'),{
+      type:'polarArea',
+      data:{labels:d.map(x=>x.user),datasets:[{data:d.map(x=>x.minutes),backgroundColor:CA,borderColor:C,borderWidth:1.5}]},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#6b7fa8',padding:8,boxWidth:10,font:{size:10}}}},
+        scales:{r:{grid:{color:'#e2e8f4'},ticks:{display:false}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* ── Bubble ── */
+async function loadBubble(){
+  try{
+    const d=await fetch(api('/api/analytics/by-category')).then(r=>r.json());
+    if(!d.length)return;kill('bubble');
+    charts.bubble=new Chart(document.getElementById('bubbleChart'),{
+      type:'bubble',
+      data:{datasets:d.map((x,i)=>({label:x.category,data:[{x:i+1,y:x.minutes,r:Math.max(5,Math.sqrt(x.minutes/5))}],backgroundColor:CA[i%C.length],borderColor:C[i%C.length],borderWidth:1.5}))},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#6b7fa8',padding:8,boxWidth:10,font:{size:10}}}},
+        scales:{x:{display:false},y:{grid:grid(),title:{display:true,text:'Total Minutes',color:'#6b7fa8'}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* ══════════════ ANALYTICS PAGE ══════════════ */
+async function loadAnalyticsPage(){
+  await Promise.all([loadGoalComparison(),loadSummary('weekly'),loadDeviceChart(),loadTop10List()]);
+}
+
+/* FR-05: Goal comparison */
+async function loadGoalComparison(){
+  try{
+    const d=await fetch(api('/api/analytics/goal-comparison')).then(r=>r.json());
+    const el=document.getElementById('goalList');
+    if(!d.length){el.innerHTML='<p style="color:var(--muted);padding:12px">No data.</p>';return}
+    el.innerHTML=d.map(u=>{
+      const pct=Math.min(100,Math.round((u.today/Math.max(u.goal,1))*100));
+      const cls=pct>=100?'goal-over':pct>=75?'goal-warn':'goal-ok';
+      const status=pct>=100?`<span class="badge b-red">⚠ Exceeded</span>`:
+                   pct>=75? `<span class="badge b-orange">Near limit</span>`:
+                            `<span class="badge b-green">On track</span>`;
+      return`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="width:120px;font-size:12px;font-weight:600;flex-shrink:0">${u.user}</div>
+        <div style="flex:1">
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-bg"><div class="goal-bar-fill ${cls}" style="width:${pct}%"></div></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${u.today} / ${u.goal} min (${pct}%)</div>
+        </div>
+        <div style="flex-shrink:0">${status}</div>
+      </div>`;
+    }).join('');
+  }catch(e){console.warn(e)}
+}
+
+/* FR-04: Usage summary */
+async function loadSummary(period='weekly', btn=null){
+  if(btn){document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+  try{
+    const d=await fetch(api(`/api/analytics/usage-summary?period=${period}`)).then(r=>r.json());
+    if(!d.length)return;kill('summary');
+    charts.summary=new Chart(document.getElementById('summaryChart'),{
+      type:'bar',
+      data:{labels:d.map(x=>x.user),datasets:[
+        {label:'Minutes',data:d.map(x=>x.minutes),backgroundColor:CA[0],borderColor:C[0],borderWidth:1.5,borderRadius:5,yAxisID:'y'},
+        {label:'Sessions',data:d.map(x=>x.sessions),backgroundColor:CA[2],borderColor:C[2],borderWidth:1.5,borderRadius:5,yAxisID:'y1',type:'line',tension:.4,pointRadius:4}
+      ]},
+      options:{responsive:true,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{labels:{color:'#6b7fa8'}}},
+        scales:{x:{grid:{display:false}},
+          y:{grid:grid(),title:{display:true,text:'Minutes',color:C[0]}},
+          y1:{position:'right',grid:{display:false},title:{display:true,text:'Sessions',color:C[2]}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* FR-09: Multi-device chart */
+async function loadDeviceChart(){
+  try{
+    const d=await fetch(api('/api/analytics/by-category')).then(r=>r.json());
+    // Proxy: use category data for device chart shape; replace with real device endpoint if you have one
+    const sessions=await fetch(api('/api/sessions')).then(r=>r.json());
+    const deviceMap={};
+    sessions.forEach(s=>{const k=s.device||'N/A';deviceMap[k]=(deviceMap[k]||0)+s.duration});
+    const labels=Object.keys(deviceMap),vals=Object.values(deviceMap);
+    if(!labels.length)return;kill('device');
+    charts.device=new Chart(document.getElementById('deviceChart'),{
+      type:'doughnut',
+      data:{labels,datasets:[{data:vals,backgroundColor:CA,borderColor:C,borderWidth:2,hoverOffset:8}]},
+      options:{responsive:true,cutout:'60%',plugins:{
+        legend:{position:'bottom',labels:{color:'#6b7fa8',padding:10,boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed.toLocaleString()} min`}}}}
+    });
+  }catch(e){console.warn(e)}
+}
+
+/* FR-08: Top 10 list */
+async function loadTop10List(){
+  try{
+    const d=await fetch(api('/api/analytics/by-app')).then(r=>r.json());
+    const el=document.getElementById('top10List');
+    if(!d.length){el.innerHTML='<p style="color:var(--muted);padding:12px">No data.</p>';return}
+    const max=d[0]?.minutes||1;
+    el.innerHTML=d.map((x,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div style="width:18px;height:18px;border-radius:50%;background:${C[i%C.length]};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+        <div style="flex:1;font-size:12px;font-weight:600">${x.app}</div>
+        <div style="width:80px">
+          <div style="background:#e9eef9;border-radius:4px;height:6px;overflow:hidden">
+            <div style="background:${C[i%C.length]};height:6px;width:${Math.round((x.minutes/max)*100)}%"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);width:55px;text-align:right">${x.minutes.toLocaleString()} min</div>
+      </div>`).join('');
+  }catch(e){console.warn(e)}
+}
+
+/* ══════════════ USERS ══════════════ */
+async function loadUsers(){
+  try{
+    const res = await fetch(api('/api/users'));
+    const d = await safeArrayResponse(res);
+    allUsers = d;
+    renderUsers(d);
+  }catch(e){ console.warn(e); }
+}
+
+// Helper: safely parse a fetch Response expected to be an array
+async function safeArrayResponse(res){
+  const data = await res.json().catch(()=>[]);
+  if(!res.ok) throw new Error(data.error||`Request failed: ${res.status}`);
+  return Array.isArray(data)?data:[];
+}
+
+// Backwards-compat shim: initApp referenced `loadAnalytics()` but only
+// `loadAnalyticsPage()` existed. Provide a thin wrapper.
+async function loadAnalytics(){
+  return loadAnalyticsPage();
+}
+
+function avatar(name,i){
+  const in2=(name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return`<div class="avatar" style="background:${AV[i%AV.length]}">${in2}</div>`;
+}
+
+function renderUsers(data){
+  const tb=document.getElementById('userBody');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--muted)">No users found.</td></tr>`;return}
+  tb.innerHTML=data.map((u,i)=>{
+    const pct=Math.min(100,Math.round(((u.todayMinutes||0)/Math.max(u.dailyGoalMin||120,1))*100));
+    const barC=pct>=100?'var(--red)':pct>=75?'var(--orange)':'var(--green)';
+    return`<tr>
+      <td style="color:var(--muted);font-size:11px">${u.id}</td>
+      <td><div style="display:flex;align-items:center;gap:7px">${avatar(u.fullName,i)}<strong style="font-size:12px">${u.fullName}</strong></div></td>
+      <td style="color:var(--muted)">${u.username||'—'}</td>
+      <td style="color:var(--muted);font-size:11px">${u.email||'—'}</td>
+      <td style="color:var(--muted)">${u.age||'—'}</td>
+      <td style="color:var(--muted)">${u.city||'—'}</td>
+      <td><strong>${u.dailyGoalMin}</strong> <span style="font-size:10px;color:var(--muted)">min</span></td>
+      <td style="min-width:90px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">${u.todayMinutes||0} / ${u.dailyGoalMin} min</div>
+        <div style="background:#e9eef9;border-radius:4px;height:5px;overflow:hidden">
+          <div style="background:${barC};height:5px;width:${pct}%;transition:width .5s"></div>
+        </div>
+      </td>
+      <td><span class="badge b-blue">${u.sessions}</span></td>
+      <td><strong>${(u.totalMinutes||0).toLocaleString()}</strong></td>
+      <td>
+        <div style="display:flex;gap:5px;justify-content:center">
+          ${isAdmin
+            ? `<button class="btn btn-sm btn-edit" onclick='openUserModal(${JSON.stringify(u)})'>Edit</button>
+               <button class="btn btn-sm btn-del" onclick="confirmDeleteUser(${u.id},'${u.fullName}')">Del</button>`
+            : `<span style="font-size:11px;color:var(--muted)">🔐 Admin only</span>`
+          }
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers(){
+  const q=document.getElementById('userSearch').value.toLowerCase();
+  renderUsers(allUsers.filter(u=>(u.fullName+u.username+u.email+u.city).toLowerCase().includes(q)));
+}
+
+/* ── User modal ── */
+function showAddUserForm(){
+  document.getElementById('editUserId').value='';
+  ['uFullName','uUsername','uEmail','uAge','uCity'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('uDailyGoal').value='120';
+  document.getElementById('userModalTitle').textContent='Add New User';
+  document.getElementById('userSubmitBtn').textContent='Create User';
+  document.getElementById('autoIdText').textContent='Fetching next ID…';
+  document.getElementById('userModal').classList.add('open');
+  fetch(api('/api/users/next-id')).then(r=>r.json())
+    .then(d=>document.getElementById('autoIdText').textContent=`Will be auto-assigned as ID ${d.nextId}`)
+    .catch(()=>document.getElementById('autoIdText').textContent='ID will be auto-assigned');
+  setTimeout(()=>document.getElementById('uFullName').focus(),120);
+}
+
+function openUserModal(u=null){
+  if(!u){showAddUserForm();return}
+  document.getElementById('editUserId').value=u.id;
+  document.getElementById('uFullName').value=u.fullName||'';
+  document.getElementById('uUsername').value=u.username||'';
+  document.getElementById('uEmail').value=u.email||'';
+  document.getElementById('uAge').value=u.age||'';
+  document.getElementById('uCity').value=u.city||'';
+  document.getElementById('uDailyGoal').value=u.dailyGoalMin||120;
+  document.getElementById('userModalTitle').textContent='Edit User';
+  document.getElementById('userSubmitBtn').textContent='Update User';
+  document.getElementById('autoIdText').textContent=`User ID: ${u.id}`;
+  document.getElementById('userModal').classList.add('open');
+}
+function closeUserModal(){document.getElementById('userModal').classList.remove('open')}
+
+async function submitUserForm(){
+  const editId=document.getElementById('editUserId').value.trim();
+  const fullName=document.getElementById('uFullName').value.trim();
+  if(!fullName){toast('Full Name is required.','err');return}
+  const payload={
+    fullName, username:document.getElementById('uUsername').value.trim(),
+    email:document.getElementById('uEmail').value.trim(),
+    age:parseInt(document.getElementById('uAge').value)||null,
+    city:document.getElementById('uCity').value.trim(),
+    dailyGoalMin:parseInt(document.getElementById('uDailyGoal').value)||120
+  };
+  const btn=document.getElementById('userSubmitBtn');
+  btn.disabled=true;btn.textContent='Saving…';
+  try{
+    const res=await fetch(editId?api(`/api/users/${editId}`):api('/api/users'),{
+      method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
+    const result=await res.json();
+    if(!res.ok)throw new Error(result.error||'Server error');
+    toast(result.userID?`User created — ID: ${result.userID} ✓`:(editId?'User updated ✓':'User created ✓'));
+    closeUserModal();
+    await Promise.all([loadUsers(),loadKPIs(),loadDropdowns()]);
+  }catch(e){toast('Error: '+e.message,'err')}
+  finally{btn.disabled=false;btn.textContent=editId?'Update User':'Create User'}
+}
+
+function confirmDeleteUser(id,name){
+  document.getElementById('confTitle').textContent='Delete User?';
+  document.getElementById('confMsg').textContent=`Delete "${name}"? Users with active sessions cannot be deleted.`;
+  document.getElementById('confBox').classList.add('open');
+  document.getElementById('confOkBtn').onclick=async()=>{
+    closeConf();
+    try{
+      const r=await fetch(api(`/api/users/${id}`),{method:'DELETE'});
+      const data=await r.json();
+      if(!r.ok)throw new Error(data.error);
+      toast('User deleted ✓');allUsers=allUsers.filter(u=>u.id!==id);renderUsers(allUsers);loadKPIs();
+    }catch(e){toast(e.message,'err')}
+  };
+}
+
+/* ══════════════ SESSIONS ══════════════ */
+async function loadSessions(){
+  try{
+    const d=await fetch(api('/api/sessions')).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()});
+    allSessions=d;renderSessions(d);
+  }catch(e){
+    document.getElementById('sessBody').innerHTML=`<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">⚠️ ${e.message}</td></tr>`;
+  }
+}
+
+function catBadge(c){
+  const m={'Social Media':'b-blue','Productivity':'b-green','Work & Productivity':'b-green',
+    'Entertainment':'b-purple','Education':'b-orange','Gaming':'b-red'};
+  return`<span class="badge ${m[c]||'b-gray'}">${c}</span>`;
+}
+
+function renderSessions(data){
+  const tb=document.getElementById('sessBody');
+  document.getElementById('sessCount').textContent=`${data.length} rows`;
+  if(!data.length){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No sessions found.</td></tr>`;return}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td style="color:var(--muted);font-size:11px">${r.id}</td>
+    <td><strong style="font-size:12px">${r.user}</strong></td>
+    <td>${r.app}</td>
+    <td>${catBadge(r.category)}</td>
+    <td style="color:var(--muted)">${r.device}</td>
+    <td><strong>${r.duration}</strong> <span style="font-size:10px;color:var(--muted)">min</span></td>
+    <td style="font-size:11px;color:var(--muted)">${r.time.slice(0,16)}</td>
+    <td>
+      <div style="display:flex;gap:5px;justify-content:center">
+        <button class="btn btn-sm btn-edit" onclick='openSessionModal("edit",${JSON.stringify(r)})'>Edit</button>
+        <button class="btn btn-sm btn-del" onclick="confirmDeleteSession(${r.id})">Del</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+/* FR-06: Advanced filter */
+async function applyFilters(){
+  try{
+    const uid=document.getElementById('fltUser').value;
+    const app=document.getElementById('fltApp').value;
+    const cat=document.getElementById('fltCat').value;
+    const from=document.getElementById('fltFrom').value;
+    const to=document.getElementById('fltTo').value;
+    const params=new URLSearchParams();
+    if(uid) params.set('userID',uid);
+    if(app) params.set('app',app);
+    if(cat) params.set('category',cat);
+    if(from) params.set('from',from);
+    if(to)   params.set('to',to);
+    const d=await fetch(api('/api/sessions/filtered?'+params)).then(r=>r.json());
+    renderSessions(d);
+  }catch(e){toast('Filter error: '+e.message,'err')}
+}
+
+function clearFilters(){
+  ['fltUser','fltApp','fltCat','fltFrom','fltTo'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el.tagName==='SELECT') el.value=''; else el.value='';
+  });
+  renderSessions(allSessions);
+  document.getElementById('sessCount').textContent=`${allSessions.length} rows`;
+}
+
+/* FR-10: Export CSV */
+function exportCSV(){
+  window.open(api('/api/sessions/export-csv'),'_blank');
+  toast('CSV download started ✓');
+}
+
+/* ── Dropdowns ── */
+async function loadDropdowns(){
+  try{
+    [dropUsers,dropApps,dropDevices]=await Promise.all([
+      fetch(api('/api/users/list')).then(r=>r.json()),
+      fetch(api('/api/apps/list')).then(r=>r.json()),
+      fetch(api('/api/devices/list')).then(r=>r.json())
+    ]);
+  }catch(e){console.warn('Dropdown error',e)}
+}
+
+function fillDropdowns(){
+  document.getElementById('fUserID').innerHTML=dropUsers.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  document.getElementById('fAppID').innerHTML=dropApps.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  document.getElementById('fDeviceID').innerHTML='<option value="">— None —</option>'+dropDevices.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+/* ── Session modal ── */
+function openSessionModal(mode,row=null){
+  fillDropdowns();
+  document.getElementById('sessionModal').classList.add('open');
+  document.getElementById('editSessId').value='';
+  document.getElementById('fDuration').value='';
+  document.getElementById('fNotes').value='';
+  document.getElementById('fStartTime').value=new Date().toISOString().slice(0,16);
+  if(mode==='edit'&&row){
+    document.getElementById('sessModalTitle').textContent='Edit Session';
+    document.getElementById('sessSubmitBtn').textContent='Update Session';
+    document.getElementById('editSessId').value=row.id;
+    document.getElementById('fUserID').value=row.userID;
+    document.getElementById('fAppID').value=row.appID;
+    document.getElementById('fDeviceID').value=row.deviceID||'';
+    document.getElementById('fDuration').value=row.duration;
+    document.getElementById('fStartTime').value=row.time.slice(0,16);
+    document.getElementById('fNotes').value=row.notes||'';
+  } else {
+    document.getElementById('sessModalTitle').textContent='Add Session';
+    document.getElementById('sessSubmitBtn').textContent='Save Session';
+  }
+}
+function closeSessionModal(){document.getElementById('sessionModal').classList.remove('open')}
+
+async function submitSessionForm(){
+  const editId=document.getElementById('editSessId').value;
+  const payload={
+    userID:parseInt(document.getElementById('fUserID').value),
+    appID:parseInt(document.getElementById('fAppID').value),
+    deviceID:parseInt(document.getElementById('fDeviceID').value)||null,
+    duration:parseInt(document.getElementById('fDuration').value),
+    startTime:document.getElementById('fStartTime').value,
+    notes:document.getElementById('fNotes').value
+  };
+  if(!payload.userID||!payload.appID||!payload.duration){toast('User, App and Duration required.','err');return}
+  const btn=document.getElementById('sessSubmitBtn');
+  btn.disabled=true;btn.textContent='Saving…';
+  try{
+    const res=await fetch(editId?api(`/api/sessions/${editId}`):api('/api/sessions'),{
+      method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.error||'Server error')}
+    toast(editId?'Session updated ✓':'Session added ✓');
+    closeSessionModal();
+    await Promise.all([loadSessions(),loadKPIs(),loadLine(),loadDoughnut(),loadBar(),loadPolar(),loadBubble()]);
+  }catch(e){toast('Error: '+e.message,'err')}
+  finally{btn.disabled=false;btn.textContent=editId?'Update Session':'Save Session'}
+}
+
+function confirmDeleteSession(id){
+  document.getElementById('confTitle').textContent='Delete Session?';
+  document.getElementById('confMsg').textContent='This session will be permanently removed from the database.';
+  document.getElementById('confBox').classList.add('open');
+  document.getElementById('confOkBtn').onclick=async()=>{
+    closeConf();
+    try{
+      const r=await fetch(api(`/api/sessions/${id}`),{method:'DELETE'});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      toast('Session deleted ✓');
+      allSessions=allSessions.filter(s=>s.id!==id);renderSessions(allSessions);loadKPIs();
+    }catch(e){toast('Delete failed: '+e.message,'err')}
+  };
+}
+
+function closeConf(){document.getElementById('confBox').classList.remove('open')}
+
+/* ── Backdrop close ── */
+['userModal','sessionModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{
+    if(e.target.id===id){id==='userModal'?closeUserModal():closeSessionModal()}
+  });
+});
+
+/* ── Refresh all ── */
+async function refreshAll(){
+  toast('Refreshing…','info');
+  await checkHealth();
+  await Promise.all([loadKPIs(),loadUsers(),loadSessions(),loadDropdowns(),
+    loadLine(),loadDoughnut(),loadBar(),loadPolar(),loadBubble()]);
+  document.getElementById('lastUpdated').textContent='Updated '+new Date().toLocaleTimeString();
+  toast('All data refreshed ✓');
+}
+
+function showPageLoader() {
+  const el = document.getElementById('loading');
+  if (el) el.style.display = 'block';
+}
+
+function hidePageLoader() {
+  const el = document.getElementById('loading');
+  if (el) el.style.display = 'none';
+}
+
+async function safeFetchJson(url) {
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
+  return data;
+}
+
+function openAdminModal() {
+  const modal = document.getElementById('adminModal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeAdminModal() {
+  const modal = document.getElementById('adminModal');
+  if (modal) modal.classList.remove('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#adminBtn')) openAdminModal();
+  if (e.target.closest('#adminClose')) closeAdminModal();
+});
+
+async function initApp() {
+  showPageLoader();
+  try {
+    await Promise.allSettled([
+      checkHealth(),
+      loadUsers(),
+      loadSessions(),
+      loadAnalytics(),
+      loadDropdowns()
+    ]);
+  } finally {
+    hidePageLoader();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', initApp);
+
+</script>
+</body>
+</html>
